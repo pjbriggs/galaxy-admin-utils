@@ -22,3 +22,13 @@ Quick deployment of local Galaxy instances
    Simple script to add a Galaxy tool to a local instance previously created by
    `deploy_galaxy.sh`.
 
+
+Backing up/copying Galaxy data and codebase
+-------------------------------------------
+
+ * _backup_database.sh_: dump SQL database and rsync data files for a local
+   Galaxy instance
+
+ * _backup_galaxy.sh_: rsync a subset of the code base for a local Galaxy
+   instance
+
