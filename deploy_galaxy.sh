@@ -3,11 +3,20 @@
 # deploy_galaxy.sh: create a basic local instance of Galaxy
 # Peter Briggs, University of Manchester 2013
 #
-# Usage: deploy_galaxy.sh DIR
+# Usage: deploy_galaxy.sh [ --port PORT ] DIR
 #
 # DIR = directory to put Galaxy instance into
 #
 # Command line
+port=
+if [ "$1" == "--port" ] ; then
+    # User specified port number
+    shift
+    if [ ! -z "$1" ] ; then
+	port=$1
+	shift
+    fi
+fi
 GALAXY_DIR=$1
 if [ -z "$GALAXY_DIR" ] ; then
   echo "Usage: $0 DIR"
@@ -54,6 +63,11 @@ echo "Creating area for tool shed tools"
 mkdir shed_tools
 echo "Making custom universe_wsgi.ini"
 sed 's/#tool_config_file = .*/tool_config_file = tool_conf.xml,shed_tool_conf.xml,local_tool_conf.xml/' galaxy-dist/universe_wsgi.ini.sample > galaxy-dist/universe_wsgi.ini
+# Set non-default port
+if [ ! -z "$port" ] ; then
+    echo "Setting port to $port"
+    sed -i 's,#port = 8080,port = '"$port"',' galaxy-dist/universe_wsgi.ini
+fi
 # Create wrapper script to run galaxy
 echo "Making wrapper script 'start_galaxy.sh'"
 cat > start_galaxy.sh <<EOF
