@@ -1,8 +1,7 @@
 #!/bin/sh
 #
-# add_tool.sh
-#
-# Add a tool to a basic local instance of Galaxy
+# add_tool.sh: add a tool to a basic local instance of Galaxy
+# Peter Briggs, University of Manchester 2013
 #
 # Usage: add_tool.sh DIR TOOL.xml TOOL_WRAPPER
 #

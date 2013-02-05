@@ -1,8 +1,7 @@
 #!/bin/sh
 #
-# deploy_galaxy.sh
-#
-# Create a basic local instance of Galaxy
+# deploy_galaxy.sh: create a basic local instance of Galaxy
+# Peter Briggs, University of Manchester 2013
 #
 # Usage: deploy_galaxy.sh DIR
 #
