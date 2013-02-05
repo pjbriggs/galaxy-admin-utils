@@ -29,6 +29,12 @@ Backing up/copying Galaxy data and codebase
  * _backup_database.sh_: dump SQL database and rsync data files for a local
    Galaxy instance
 
+   Usage: `backup_database.sh [--dry-run] GALAXY_DIR`
+
+   Dumps the SQL contents of the Galaxy distribution in `GALAXY_DIR` into the
+   current working directory, and also makes (or updates) an rsync copy of the
+   database/files directory.
+
  * _backup_galaxy.sh_: rsync a subset of the code base for a local Galaxy
    instance
 
