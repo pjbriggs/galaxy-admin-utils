@@ -3,23 +3,36 @@
 # deploy_galaxy.sh: create a basic local instance of Galaxy
 # Peter Briggs, University of Manchester 2013
 #
-# Usage: deploy_galaxy.sh [ --port PORT ] DIR
+# Usage: deploy_galaxy.sh [ OPTIONS ] DIR
 #
 # DIR = directory to put Galaxy instance into
 #
+# Available options:
+# --port PORT: use PORT rather than default (8080)
+# --admin_users EMAIL[,EMAIL...]: set admin user email addresses
+#
 # Command line
 port=
-if [ "$1" == "--port" ] ; then
-    # User specified port number
-    shift
-    if [ ! -z "$1" ] ; then
-	port=$1
+admin_users=
+while [ $# -gt 1 ] ; do
+    if [ "$1" == "--port" ] ; then
+        # User specified port number
 	shift
+	if [ ! -z "$1" ] ; then
+	    port=$1
+	fi
+    elif [ "$1" == "--admin_users" ] ; then
+	shift
+	if [ ! -z "$1" ] ; then
+	    admin_users=$1
+	fi
     fi
-fi
+    # Next argument
+    shift
+done
 GALAXY_DIR=$1
 if [ -z "$GALAXY_DIR" ] ; then
-  echo "Usage: $0 DIR"
+  echo "Usage: $0 [ OPTIONS ] DIR"
   exit
 fi
 # Check that the target directory doesn't already exist
@@ -67,6 +80,12 @@ sed 's/#tool_config_file = .*/tool_config_file = tool_conf.xml,shed_tool_conf.xm
 if [ ! -z "$port" ] ; then
     echo "Setting port to $port"
     sed -i 's,#port = 8080,port = '"$port"',' galaxy-dist/universe_wsgi.ini
+fi
+# Set admin users
+if [ ! -z "$admin_users" ] ; then
+    echo "Adding $admin_users to admin user emails"
+    echo "(You still need to create these accounts once Galaxy has started)"
+    sed -i 's,#admin_users = None,admin_users = '"$admin_users"',' galaxy-dist/universe_wsgi.ini
 fi
 # Create wrapper script to run galaxy
 echo "Making wrapper script 'start_galaxy.sh'"

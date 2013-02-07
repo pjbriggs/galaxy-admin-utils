@@ -8,15 +8,17 @@ Quick deployment of local Galaxy instances
 
  * _deploy_galaxy.sh_: automatically create a basic local instance of Galaxy
 
-   Usage: `deploy_galaxy.sh [--port PORT] DIR`
+   Usage: `deploy_galaxy.sh [ OPTIONS ] DIR`
 
    Creates a new directory `DIR` and then sets up a Python virtualenv, clones
    and configures a copy of `galaxy-dist`, sets up a subdirectory `local_tools`
    pointed to by `local_tool_conf.xml`, and creates a `start_galaxy.sh` script
    to launch the new local instance.
 
-   By default Galaxy instances listen on port 8080; use the `--port` option to
-   specify an alternative port number to use.
+   Options:
+
+   --port PORT: use PORT rather than default (8080)
+   --admin_users EMAIL[,EMAIL...]: set admin user email addresses
 
  * _add_tool.sh_: automatically add tool files into local instance from `deploy_galaxy.sh`
 
