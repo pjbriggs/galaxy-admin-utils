@@ -3,14 +3,14 @@
 # add_tool.sh: add a tool to a basic local instance of Galaxy
 # Peter Briggs, University of Manchester 2013
 #
-# Usage: add_tool.sh DIR TOOL.xml TOOL_WRAPPER
+# Usage: add_tool.sh DIR TOOL.xml [ TOOL_WRAPPER ]
 #
 # DIR = directory where Galaxy instance was installed
 #       by deploy_galaxy.sh
 #
 # Command line
-if [ $# -ne 3 ] ; then
-    echo "Usage: $0 DIR TOOL.xml TOOL_WRAPPER"
+if [ $# -lt 2 ] ||  [ $# -gt 3 ] ; then
+    echo "Usage: $0 DIR TOOL.xml [ TOOL_WRAPPER ]"
     exit
 fi
 GALAXY_DIR=$1
@@ -38,11 +38,18 @@ if [ ! -d $local_tools_dir/$tool_name ] ; then
     mkdir $local_tools_dir/$tool_name
 fi
 /bin/cp -f $TOOL_XML $local_tools_dir/$tool_name
-/bin/cp -f $TOOL_WRAPPER $local_tools_dir/$tool_name
+if [ ! -z "$TOOL_WRAPPER" ] ; then
+    /bin/cp -f $TOOL_WRAPPER $local_tools_dir/$tool_name
+fi
 #
 # Update the conf file
-echo "Updating local_tool_conf.xml"
-sed -i 's,<!--Add tool references here-->,<tool file=\"'"$tool_name"'\/'"$tool_name"'.xml\" \/>\n\t<!--Add tool references here-->,' $local_tool_conf
+update_conf_file=`grep ${tool_name}.xml $local_tool_conf`
+if [ -z "$update_conf_file" ] ; then
+    echo "Updating local_tool_conf.xml"
+    sed -i 's,<!--Add tool references here-->,<tool file=\"'"$tool_name"'\/'"$tool_name"'.xml\" \/>\n\t<!--Add tool references here-->,' $local_tool_conf
+else
+    echo "Tool already referenced in $local_tool_conf"
+fi
 #
 # Finished
 echo "Done - restart Galaxy to access the installed tool"

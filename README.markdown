@@ -22,10 +22,12 @@ Quick deployment of local Galaxy instances
 
  * _add_tool.sh_: automatically add tool files into local instance from `deploy_galaxy.sh`
 
-   Usage: `add_tool.sh DIR TOOL.xml TOOL_WRAPPER`
+   Usage: `add_tool.sh DIR TOOL.xml [ TOOL_WRAPPER ]`
 
    Simple script to add a Galaxy tool to a local instance previously created by
-   `deploy_galaxy.sh`.
+   `deploy_galaxy.sh`. Copies TOOL.xml and optional TOOL_WRAPPER file to subdirectory
+   DIR/local_tools/TOOL/ and adds a reference in the `local_tools_conf.xml` file.
+   The tool should then be accessible on restarting the local instance.
 
 
 Backing up/copying Galaxy data and codebase
