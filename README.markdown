@@ -45,3 +45,17 @@ Backing up/copying Galaxy data and codebase
  * _backup_galaxy.sh_: rsync a subset of the code base for a local Galaxy
    instance
 
+Monitoring Galaxy processes
+---------------------------
+
+ * _galaxy_status.sh_: monitor status of Galaxy server processes
+
+   Usage: `galaxy_status.sh`
+
+   Must be run from the location were the Galaxy .pid and .log files have been
+   written.
+
+   Reports the status of each server process that has a PID file, either
+   _Running_ (server is alive but not yet serving content), _Active_ (server
+   is available to serve content), or _Not running_ (server is no longer
+   alive).
