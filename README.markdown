@@ -45,8 +45,8 @@ Backing up/copying Galaxy data and codebase
  * _backup_galaxy.sh_: rsync a subset of the code base for a local Galaxy
    instance
 
-Monitoring Galaxy processes
----------------------------
+Monitoring and controlling Galaxy processes in a multi-server set-up
+--------------------------------------------------------------------
 
  * _galaxy_status.sh_: monitor status of Galaxy server processes
 
@@ -59,3 +59,18 @@ Monitoring Galaxy processes
    _Running_ (server is alive but not yet serving content), _Active_ (server
    is available to serve content), or _Not running_ (server is no longer
    alive).
+
+*  _run-server.sh_: interact with a single Galaxy server process
+
+   Usage: `run-server.sh SERVER args...`
+
+  Must be executed from the directory where the `run.sh` and `universe_wsgi.ini`
+  files are located
+
+  Can be used to interact with a single Galaxy server process in a load-balanced 
+  set-up where there are multiple co-operating servers e.g. `web0`, `web1`,
+  `manager`, `handler0` etc
+
+  For example to stop `handler1` do
+
+      $ sh run-server.sh web0 --stop-daemon
