@@ -32,17 +32,20 @@ for f in $pid_files ; do
    server=${f%%.*}
    servers="$servers $server"
    pid=`cat $f`
-   status=`ps --pid $pid --noheaders`
+   status=`ps --pid $pid --noheaders 2>/dev/null`
    if [ ! -z "$status" ] ; then
       status=Running
+      is_active=
       if [ -f $server.log ] ; then
          serving=`grep "^Starting server in PID $pid" $server.log -A 1 | grep "^serving on"`
          if [ ! -z "$serving" ] ; then
 	    port=`echo $serving | cut -d: -f3`
+	    is_active=yes
             status="Active (port $port)"
          fi
       fi
-      if [ "$status" != "Active" ] ; then
+      if [ -z "$is_active" ] ; then
+         # At least one server is inactive
          all_active=
       fi
    else
