@@ -51,6 +51,9 @@ if [ -z "$server_exists" ] ; then
     exit 1
 fi
 #
+# Explicitly ensure GALAXY_RUN_ALL is set to a null value
+export GALAXY_RUN_ALL=
+#
 # Issue the command to the server process
 echo Sending $@ to $server
 sh run.sh --server-name=$server --pid-file=$server.pid --log-file=$server.log $@
