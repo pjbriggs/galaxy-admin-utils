@@ -31,7 +31,10 @@ pid_files=`ls *.pid 2>/dev/null`
 for f in $pid_files ; do
    server=${f%%.*}
    servers="$servers $server"
-   pid=`cat $f`
+   pid=`cat $f 2>/dev/null`
+   if [ -z "$pid" ] ; then
+       pid="?"
+   fi
    status=`ps --pid $pid --noheaders 2>/dev/null`
    if [ ! -z "$status" ] ; then
       status=Running
