@@ -114,7 +114,7 @@ echo "Starting Galaxy in $GALAXY_DIR"
 . $GALAXY_DIR/galaxy_venv/bin/activate
 # Start Galaxy with --reload option
 cd $GALAXY_DIR/galaxy-dist
-sh run.sh --reload
+sh run.sh --reload 2>&1 | tee $GALAXY_DIR/galaxy.log
 EOF
 chmod +x start_galaxy.sh
 # Finished
