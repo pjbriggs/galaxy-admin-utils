@@ -30,6 +30,7 @@ while [ $# -gt 1 ] ; do
     # Next argument
     shift
 done
+# Get Galaxy directory
 GALAXY_DIR=$1
 if [ -z "$GALAXY_DIR" ] ; then
   echo "Usage: $0 [ OPTIONS ] DIR"
@@ -41,23 +42,34 @@ if [ -e $GALAXY_DIR ] ; then
   exit 1
 fi
 # Start
-echo "Making directory $GALAXY_DIR"
+echo Making subdirectory $GALAXY_DIR in `pwd`
 mkdir $GALAXY_DIR
 cd $GALAXY_DIR
+GALAXY_DIR=`pwd`
 # Make a Python virtualenv for this instance
-echo "Making virtualenv..."
+got_virtualenv=`/usr/bin/which virtualenv 2>&1 | grep -v "^/usr/bin/which: no virtualenv in"`
+if [ -z "$got_virtualenv" ] ; then
+    echo "ERROR: Python 'virtualenv' not found on your PATH"
+    exit 1
+fi
+echo -n "Making virtualenv..."
 virtualenv galaxy_venv >> install.log
-echo "Activating virtualenv"
+echo "ok"
+echo -n "Activating virtualenv..."
 . galaxy_venv/bin/activate
+echo "ok"
 # Install dependencies
-echo "Installing NumPy..."
+echo -n "Installing NumPy..."
 pip install numpy >> install.log
-echo "Downloading and installing patched RPy..."
-wget -O rpy-1.0.3-patched.tar.gz https://dl.dropbox.com/s/r0lknbav2j8tmkw/rpy-1.0.3-patched.tar.gz?dl=1 2>&1 >> install.log
+echo "ok"
+echo -n "Downloading and installing patched RPy..."
+wget -O rpy-1.0.3-patched.tar.gz https://dl.dropbox.com/s/r0lknbav2j8tmkw/rpy-1.0.3-patched.tar.gz?dl=1 &>> install.log
 pip install -f file://${PWD}/rpy-1.0.3-patched.tar.gz rpy >> install.log
+echo "ok"
 # Install Galaxy
-echo "Cloning galaxy source code..."
-hg clone https://bitbucket.org/galaxy/galaxy-dist/ 2>&1 >> install.log
+echo -n "Cloning galaxy source code..."
+hg clone https://bitbucket.org/galaxy/galaxy-dist/ &>> install.log
+echo "ok"
 # Create somewhere for local tools
 echo "Creating area for local tools"
 mkdir local_tools
@@ -72,10 +84,14 @@ cat > galaxy-dist/local_tool_conf.xml <<EOF
   </section>
 </toolbox>
 EOF
+# Set up directories for shed tools and managed tools
 echo "Creating area for tool shed tools"
 mkdir shed_tools
+echo "Creating area for managed packages"
+mkdir managed_packages
 echo "Making custom universe_wsgi.ini"
 sed 's/#tool_config_file = .*/tool_config_file = tool_conf.xml,shed_tool_conf.xml,local_tool_conf.xml/' galaxy-dist/universe_wsgi.ini.sample > galaxy-dist/universe_wsgi.ini
+sed -i 's,#tool_dependency_dir = None,tool_dependency_dir = ../managed_packages,' galaxy-dist/universe_wsgi.ini
 # Set non-default port
 if [ ! -z "$port" ] ; then
     echo "Setting port to $port"
