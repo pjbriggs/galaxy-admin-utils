@@ -16,6 +16,9 @@
 #
 # $ sh run-server.sh web0 --stop-daemon
 #
+# NB also supports a --restart-daemon option which issues
+# --stop-daemon/--daemon commands one after the other
+#
 echo Interact with a single Galaxy server process
 #
 # Get server name
@@ -32,7 +35,12 @@ if [ $# -eq 0 ] ; then
     echo No arguments supplied
     exit 1
 fi
-echo Arguments: $@
+#
+# Look for --restart-daemon
+restart_daemon=
+if [ "$1" == "--restart-daemon" ] ; then
+    restart_daemon=yes
+fi
 #
 # Check there's a run.sh file here
 if [ ! -f run.sh ] ; then
@@ -55,8 +63,19 @@ fi
 export GALAXY_RUN_ALL=
 #
 # Issue the command to the server process
-echo Sending $@ to $server
-sh run.sh --server-name=$server --pid-file=$server.pid --log-file=$server.log $@
+function call_server() {
+    local server=$1
+    shift
+    echo Sending $@ to $server
+    sh run.sh --server-name=$server --pid-file=$server.pid --log-file=$server.log $@
+}
+if [ ! -z "$restart_daemon" ] ; then
+    echo Restarting $server
+    call_server $server --stop-daemon
+    call_server $server --daemon
+else
+    call_server $server $@
+fi
 echo Done
 ##
 #
