@@ -2,19 +2,57 @@
 #
 # Script to automate backup of Galaxy database
 #
-# Usage: backup_database.sh [--dry-run] GALAXY_DIR
+# Usage: backup_database.sh [--dry-run] GALAXY_DIR [ BACKUP_DIR ]
 #
-# Command line
+# Reads information from universe_wsgi.ini file in GALAXY_DIR and
+# generates a dump of the SQL database, plus a "mirroring" rsync
+# of the database files directory.
+#
+# Creates the following directory structure under BACKUP_DIR:
+#
+#   logs/    Logs from rsyncing the files
+#   files/   Mirror of Galaxy's database/files directory
+#   sql/     Timestamped SQL dumps from Galaxy's database
+#
+# If BACKUP_DIR is not specified then it defaults to the current
+# working directory.
+#
+# If --dry-run is specified then the directory structure is
+# created and the SQL dump and rsync commands are constructed but
+# not executed.
+#
+# Process command line
 dry_run=
 if [ "$1" == "--dry-run" ] ; then
+    echo "*** DRY RUN MODE ***"
     dry_run=yes
     shift
 fi
 if [ -z "$1" ] ; then
-    echo "Usage: $0 [--dry-run] DIR"
+    echo "Usage: $0 [--dry-run] GALAXY_DIR [ BACKUP_DIR ]"
     exit
 fi
 GALAXY_DIR=$1
+BACKUP_DIR=$2
+#
+# Sort out destination directory for backups
+if [ -z "$BACKUP_DIR" ] ; then
+    BACKUP_DIR=$(pwd)
+fi
+if [ ! -d $BACKUP_DIR ] ; then
+    mkdir -p $BACKUP_DIR
+fi
+#
+# Build backup subdirectory structure
+if [ ! -d $BACKUP_DIR/sql ] ; then
+    mkdir -p $BACKUP_DIR/sql
+fi
+if [ ! -d $BACKUP_DIR/files ] ; then
+    mkdir -p $BACKUP_DIR/files
+fi
+if [ ! -d $BACKUP_DIR/logs ] ; then
+    mkdir -p $BACKUP_DIR/logs
+fi
 #
 # Look for universe_wsgi.ini and extract SQL database  details
 #
@@ -23,7 +61,7 @@ GALAXY_DIR=$1
 # postgres://user:password@localhost:5432/database
 universe_wsgi=$GALAXY_DIR/universe_wsgi.ini
 if [ ! -f $universe_wsgi ] ; then
-    echo "Can't find $universe_wsgi.ini"
+    echo "Can't find $universe_wsgi.ini" >&2
     exit 1
 fi
 database_connection=`grep "^database_connection" $universe_wsgi | tail -1 | cut -f2- -d"="`
@@ -32,11 +70,9 @@ if [ -z "$database_connection" ] ; then
     database_connection=`grep "^#database_connection" $universe_wsgi | tail -1 | cut -f2- -d"="`
 fi
 # Uncomment for testing
-##database_connection="database_connection = postgres://galaxy:secret@127.0.0.1:5432/galaxy_prod"
-database_connection=`echo $database_connection | cut -f2- -d"="`
-echo "$database_connection"
+##database_connection=" postgres://galaxy:secret@127.0.0.1:5432/galaxy_prod"
+##database_connection=" sqlite:///./database/universe.sqlite?isolation_level=IMMEDIATE"
 db_type=`echo $database_connection | cut -d":" -f1`
-echo "$db_type"
 if [ "$db_type" == "postgres" ] ; then
     # Extract user, password and db name
     echo "Postgres database engine"
@@ -50,8 +86,13 @@ if [ "$db_type" == "postgres" ] ; then
     echo "Password: $psql_passwd"
     echo "Host    : $psql_host"
     echo "Port    : $psql_port"
+elif [ "$db_type" == "sqlite" ] ; then    
+    # Extract database file name
+    echo "Sqlite database engine"
+    sqlite_db=`echo $database_connection | cut -f2- -d":" | cut -f1 -d"?" | sed 's/\/\/\///g' | sed 's/\.\///g'`
+    sqlite_db=$GALAXY_DIR/$sqlite_db
 else
-    echo "Backup for '$db_type' not implemented"
+    echo "Backup for '$db_type' database not implemented"
     echo "Stopping"
     exit
 fi
@@ -61,14 +102,13 @@ file_path=`grep "^#\?file_path" $universe_wsgi | cut -f2- -d"="`
 file_path=`echo $file_path`
 DB_DIR=$GALAXY_DIR/$file_path
 echo "Database files: $DB_DIR"
-echo "Dry run $dry_run"
 #
 # Backup the SQL database
 timestamp=`date +%Y%m%d%H%M%S`
 if [ "$db_type" == "postgres" ] ; then
     # Set up destination for Postgres dump
-    pg_dump_file=galaxy_db.${timestamp}.pg_dump
-    # Set up and run the command
+    pg_dump_file=$BACKUP_DIR/sql/galaxy_db.${timestamp}.pg_dump
+    # Set up and run the command to dump the SQL
     pg_dump_cmd="pg_dump -h $psql_host -p $psql_port -U $psql_user $psql_db"
     echo "Dumping the SQL database contents to $pg_dump_file"
     export PGPASSWORD=$psql_passwd
@@ -76,16 +116,35 @@ if [ "$db_type" == "postgres" ] ; then
     if [ -z "$dry_run" ] ; then
 	$pg_dump_cmd > $pg_dump_file
     fi
+elif [ "$db_type" == "sqlite" ] ; then
+    # Set up destination for SQLite dump
+    sqlite_dump_file=$BACKUP_DIR/sql/galaxy_db.${timestamp}.sqlite_dump
+    # Set up and run the command to dump the SQL
+    sqlite_dump_cmd="echo .dump | sqlite3 $sqlite_db"
+    echo "Dumping the SQL database contents to $sqlite_dump_file"
+    echo "$sqlite_dump_cmd > $sqlite_dump_file"
+    if [ -z "$dry_run" ] ; then
+	$sqlite_dump_cmd > $sqlite_dump_file
+    fi
 fi
 #
 # Rsync the database files
-db_backup_dir=galaxy_db_files.backup
-rsync_cmd="rsync -av --delete-after ${DB_DIR}/ $db_backup_dir"
-echo "Running $rsync_cmd"
-if [ -z "$dry_run" ] ; then
-    $rsync_cmd 2>&1 > galaxy_db_files.backup.${timestamp}.log
-    du -sh $db_backup_dir
+db_backup_dir=$BACKUP_DIR/files
+log_file=$BACKUP_DIR/logs/files.backup.${timestamp}.log
+rsync_cmd="rsync"
+if [ ! -z "$dry_run" ] ; then
+    rsync_cmd="$rsync_cmd --dry-run"
+    log_file=$BACKUP_DIR/logs/dry-run.files.backup.${timestamp}.log
 fi
+rsync_cmd="$rsync_cmd -av --delete-after ${DB_DIR}/ $db_backup_dir"
+echo "Running $rsync_cmd"
+$rsync_cmd 2>&1 > $log_file
+#
+# Report the sizes of SQL and files backups
+du -sh $BACKUP_DIR
+du -sh $BACKUP_DIR/sql
+du -sh $BACKUP_DIR/files
+du -sh $BACKUP_DIR/logs
 echo "Done"
 exit
 ##
