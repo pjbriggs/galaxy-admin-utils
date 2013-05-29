@@ -77,13 +77,27 @@ Monitoring and controlling Galaxy processes in a multi-server set-up
 
    Usage: `run-server.sh SERVER args...`
 
-  Must be executed from the directory where the `run.sh` and `universe_wsgi.ini`
-  files are located
+   Must be executed from the directory where the `run.sh` and `universe_wsgi.ini`
+   files are located
 
-  Can be used to interact with a single Galaxy server process in a load-balanced 
-  set-up where there are multiple co-operating servers e.g. `web0`, `web1`,
-  `manager`, `handler0` etc
+   Can be used to interact with a single Galaxy server process in a load-balanced 
+   set-up where there are multiple co-operating servers e.g. `web0`, `web1`,
+   `manager`, `handler0` etc
 
-  For example to stop `handler1` do
+   For example to stop `handler1` do
 
       $ sh run-server.sh web0 --stop-daemon
+
+*  _rolling-restart.sh_: restart Galaxy processes in a "rolling" fashion
+
+   Usage: `rolling-restart.sh`
+
+   Must be executed from the directory where the `run.sh` and `universe_wsgi.ini`
+   files are located
+
+   Stops and starts each of the servers listed in universe_wsgi.ini in turn (except
+   for "manager", which must be restarted explicitly using e.g. run-server.sh),
+   waiting for each one to come back online before restarting the next.
+
+   For set ups with multiple handlers and web servers this should mean that Galaxy
+   remains available to end users throughout the restart process.
