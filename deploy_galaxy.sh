@@ -31,11 +31,11 @@ while [ $# -gt 1 ] ; do
     shift
 done
 # Get Galaxy directory
-GALAXY_DIR=$1
-if [ -z "$GALAXY_DIR" ] ; then
+if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
   echo "Usage: $0 [ OPTIONS ] DIR"
   exit
 fi
+GALAXY_DIR=$1
 # Check that the target directory doesn't already exist
 if [ -e $GALAXY_DIR ] ; then
   echo "$GALAXY_DIR: already exists"
