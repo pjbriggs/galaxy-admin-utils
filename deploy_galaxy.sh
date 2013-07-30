@@ -42,10 +42,14 @@ if [ -e $GALAXY_DIR ] ; then
   exit 1
 fi
 # Start
-echo Making subdirectory $GALAXY_DIR in `pwd`
+echo "Making subdirectory $GALAXY_DIR in $(pwd)"
 mkdir $GALAXY_DIR
+if [ ! -d "$GALAXY_DIR" ] ; then
+    echo "Failed to make directory $GALAXY_DIR"
+    exit 1
+fi
 cd $GALAXY_DIR
-GALAXY_DIR=`pwd`
+GALAXY_DIR=$(pwd)
 # Make a Python virtualenv for this instance
 got_virtualenv=`/usr/bin/which virtualenv 2>&1 | grep -v "^/usr/bin/which: no virtualenv in"`
 if [ -z "$got_virtualenv" ] ; then
