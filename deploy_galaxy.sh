@@ -96,6 +96,10 @@ mkdir managed_packages
 echo "Making custom universe_wsgi.ini"
 sed 's/#tool_config_file = .*/tool_config_file = tool_conf.xml,shed_tool_conf.xml,local_tool_conf.xml/' galaxy-dist/universe_wsgi.ini.sample > galaxy-dist/universe_wsgi.ini
 sed -i 's,#tool_dependency_dir = None,tool_dependency_dir = ../managed_packages,' galaxy-dist/universe_wsgi.ini
+# Set the brand
+brand=$(basename $GALAXY_DIR)
+echo "Setting brand to $brand"
+sed -i 's,#brand = None,brand = '"$brand"',' galaxy-dist/universe_wsgi.ini
 # Set non-default port
 if [ ! -z "$port" ] ; then
     echo "Setting port to $port"
@@ -113,12 +117,13 @@ cat > start_galaxy.sh <<EOF
 #!/bin/sh
 # Automatically generated script to run galaxy
 # in $GALAXY_DIR
-echo "Starting Galaxy in $GALAXY_DIR"
+GALAXY_DIR=\$(dirname \$0)
+echo "Starting Galaxy in \$GALAXY_DIR"
 # Activate virtualenv
-. $GALAXY_DIR/galaxy_venv/bin/activate
+. \$GALAXY_DIR/galaxy_venv/bin/activate
 # Start Galaxy with --reload option
 cd $GALAXY_DIR/galaxy-dist
-sh run.sh --reload 2>&1 | tee $GALAXY_DIR/galaxy.log
+sh run.sh --reload 2>&1 | tee \$GALAXY_DIR/galaxy.log
 EOF
 chmod +x start_galaxy.sh
 # Finished
