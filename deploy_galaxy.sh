@@ -33,6 +33,12 @@ done
 # Get Galaxy directory
 if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
   echo "Usage: $0 [ OPTIONS ] DIR"
+  echo ""
+  echo "Create a new Galaxy instance under directory DIR"
+  echo ""
+  echo "Options:"
+  echo "  --port PORT: use PORT rather than 8080"
+  echo "  --admin_users: EMAIL[,EMAIL...]: set admin user emails"
   exit
 fi
 GALAXY_DIR=$1
