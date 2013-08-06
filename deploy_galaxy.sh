@@ -112,17 +112,20 @@ if [ ! -z "$admin_users" ] ; then
     sed -i 's,#admin_users = None,admin_users = '"$admin_users"',' galaxy-dist/universe_wsgi.ini
 fi
 # Create wrapper script to run galaxy
-echo "Making wrapper script 'start_galaxy.sh'"
+echo "Making generic wrapper script 'start_galaxy.sh'"
 cat > start_galaxy.sh <<EOF
 #!/bin/sh
 # Automatically generated script to run galaxy
-# in $GALAXY_DIR
+# in $(basename $GALAXY_DIR)
 GALAXY_DIR=\$(dirname \$0)
+if [ -z \$(echo \$GALAXY_DIR | grep "^/") ] ; then
+  GALAXY_DIR=\$(pwd)/\$GALAXY_DIR
+fi
 echo "Starting Galaxy in \$GALAXY_DIR"
 # Activate virtualenv
 . \$GALAXY_DIR/galaxy_venv/bin/activate
 # Start Galaxy with --reload option
-cd $GALAXY_DIR/galaxy-dist
+cd \$GALAXY_DIR/galaxy-dist
 sh run.sh --reload 2>&1 | tee \$GALAXY_DIR/galaxy.log
 EOF
 chmod +x start_galaxy.sh
