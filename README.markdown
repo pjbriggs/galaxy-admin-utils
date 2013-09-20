@@ -33,18 +33,19 @@ Quick deployment of local Galaxy instances
 Backing up/copying Galaxy data and codebase
 -------------------------------------------
 
- * _backup_database.sh_: dump SQL database and rsync data files for a local
-   Galaxy instance
+ * _backup_galaxy.sh_: dump SQL database and rsync database files and
+   codebase for a local Galaxy instance
 
-   Usage: `backup_database.sh [--dry-run] GALAXY_DIR [ BACKUP_DIR ]`
+   Usage: `backup_galaxy.sh [--dry-run] GALAXY_DIR [ BACKUP_DIR ]`
 
    Reads information from universe_wsgi.ini file in GALAXY_DIR and
    generates a dump of the SQL database, plus a "mirroring" rsync
-   of the database files directory.
+   of the database files directory and the Galaxy codebase.
 
    Creates the following directory structure under BACKUP_DIR:
 
     logs/    Logs from rsyncing the files
+    code/    Mirror of galaxy-dist, local_tools, shed_tools etc
     files/   Mirror of Galaxy's database/files directory
     sql/     Timestamped SQL dumps from Galaxy's database
 
@@ -54,9 +55,6 @@ Backing up/copying Galaxy data and codebase
    If `--dry-run` is specified then the directory structure is
    created and the SQL dump and rsync commands are constructed but
    not executed.
-
- * _backup_galaxy.sh_: rsync a subset of the code base for a local Galaxy
-   instance
 
 Monitoring and controlling Galaxy processes in a multi-server set-up
 --------------------------------------------------------------------
