@@ -108,10 +108,20 @@ else
 fi
 #
 # Locate the files part of the database
-file_path=`grep "^#\?file_path" $universe_wsgi | cut -f2- -d"="`
-file_path=`echo $file_path`
+file_path=`grep "^#\?file_path" $universe_wsgi | tail -1 | cut -f2- -d"="`
+file_path=$(echo $file_path) # Trick to strip leading spaces
+if [ -z "$file_path" ] ; then
+    echo "ERROR could not extract file_path"
+    echo "Stopping"
+    exit 1
+fi
 DB_DIR=$GALAXY_DIR/$file_path
 echo "Database files: $DB_DIR"
+if [ ! -d $DB_DIR ] ; then
+    echo "ERROR not a directory"
+    echo "Stopping"
+    exit 1
+fi
 #
 # Backup the SQL database
 timestamp=`date +%Y%m%d%H%M%S`
