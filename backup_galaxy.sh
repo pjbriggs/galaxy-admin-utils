@@ -2,7 +2,7 @@
 #
 # Script to automate backup of Galaxy database
 #
-# Usage: backup_database.sh [--dry-run] GALAXY_DIR [ BACKUP_DIR ]
+# Usage: backup_galaxy.sh [--dry-run] GALAXY_DIR [ BACKUP_DIR ]
 #
 # Reads information from universe_wsgi.ini file in GALAXY_DIR and
 # generates a dump of the SQL database, plus a "mirroring" rsync
@@ -10,9 +10,11 @@
 #
 # Creates the following directory structure under BACKUP_DIR:
 #
-#   logs/    Logs from rsyncing the files
+#   logs/    Logs from rsyncing the files & code
 #   files/   Mirror of Galaxy's database/files directory
 #   sql/     Timestamped SQL dumps from Galaxy's database
+#   code/    Mirror of the Galaxy code (ie galaxy-dist, local_tools
+#            shed_tools and cluster_environment_setup file etc)
 #
 # If BACKUP_DIR is not specified then it defaults to the current
 # working directory.
@@ -43,18 +45,26 @@ if [ ! -d $BACKUP_DIR ] ; then
     mkdir -p $BACKUP_DIR
 fi
 #
+# Create datestamp string
+datestamp=`date +%Y_%m_%d`
+#
 # Build backup subdirectory structure
-if [ ! -d $BACKUP_DIR/sql ] ; then
-    mkdir -p $BACKUP_DIR/sql
+sql_dir=$BACKUP_DIR/sql/$datestamp
+if [ ! -d $sql_dir ] ; then
+    mkdir -p $sql_dir
 fi
 if [ ! -d $BACKUP_DIR/files ] ; then
     mkdir -p $BACKUP_DIR/files
 fi
-if [ ! -d $BACKUP_DIR/logs ] ; then
-    mkdir -p $BACKUP_DIR/logs
+log_dir=$BACKUP_DIR/logs/$datestamp
+if [ ! -d $log_dir ] ; then
+    mkdir -p $log_dir
+fi
+if [ ! -d $BACKUP_DIR/code ] ; then
+    mkdir -p $BACKUP_DIR/code
 fi
 #
-# Look for universe_wsgi.ini and extract SQL database  details
+# Look for universe_wsgi.ini and extract SQL database details
 #
 # Formats are:
 # sqlite:///./database/universe.sqlite?isolation_level=IMMEDIATE
@@ -107,7 +117,7 @@ echo "Database files: $DB_DIR"
 timestamp=`date +%Y%m%d%H%M%S`
 if [ "$db_type" == "postgres" ] ; then
     # Set up destination for Postgres dump
-    pg_dump_file=$BACKUP_DIR/sql/galaxy_db.${timestamp}.pg_dump
+    pg_dump_file=$sql_dir/galaxy_db.${timestamp}.pg_dump
     # Set up and run the command to dump the SQL
     pg_dump_cmd="pg_dump -h $psql_host -p $psql_port -U $psql_user $psql_db"
     echo "Dumping the SQL database contents to $pg_dump_file"
@@ -118,7 +128,7 @@ if [ "$db_type" == "postgres" ] ; then
     fi
 elif [ "$db_type" == "sqlite" ] ; then
     # Set up destination for SQLite dump
-    sqlite_dump_file=$BACKUP_DIR/sql/galaxy_db.${timestamp}.sqlite_dump
+    sqlite_dump_file=$sql_dir/galaxy_db.${timestamp}.sqlite_dump
     # Set up and run the command to dump the SQL
     sqlite_dump_cmd="echo .dump | sqlite3 $sqlite_db"
     echo "Dumping the SQL database contents to $sqlite_dump_file"
@@ -128,22 +138,48 @@ elif [ "$db_type" == "sqlite" ] ; then
     fi
 fi
 #
-# Rsync the database files
+# Mirror the database files using rsync
 db_backup_dir=$BACKUP_DIR/files
-log_file=$BACKUP_DIR/logs/files.backup.${timestamp}.log
+log_file=$log_dir/files.backup.${timestamp}.log
 rsync_cmd="rsync"
 if [ ! -z "$dry_run" ] ; then
     rsync_cmd="$rsync_cmd --dry-run"
-    log_file=$BACKUP_DIR/logs/dry-run.files.backup.${timestamp}.log
+    log_file=$log_dir/dry-run.files.backup.${timestamp}.log
 fi
 rsync_cmd="$rsync_cmd -av --delete-after ${DB_DIR}/ $db_backup_dir"
-echo "Running $rsync_cmd"
+echo "Database files: running $rsync_cmd"
 $rsync_cmd 2>&1 > $log_file
 #
-# Report the sizes of SQL and files backups
+# Mirror the Galaxy code using rsync
+code_backup_dir=$BACKUP_DIR/code
+log_file=$log_dir/code.backup.${timestamp}.log
+base_rsync_cmd="rsync"
+if [ ! -z "$dry_run" ] ; then
+    base_rsync_cmd="$base_rsync_cmd --dry-run"
+    log_file=$log_dir/dry-run.code.backup.${timestamp}.log
+fi
+rsync_cmd="$base_rsync_cmd -av --delete-after --exclude=/database/files/* -m ${GALAXY_DIR}/ $code_backup_dir/galaxy-dist"
+echo "galaxy-dist: running $rsync_cmd"
+$rsync_cmd 2>&1 > $log_file
+#
+# Other directories
+code_dirs="local_tools shed_tools galaxy_env galaxy_venv cluster_environment_setup.sh"
+for code_dir in $code_dirs ; do
+    d=${GALAXY_DIR}/../$code_dir
+    if [ -e $d ] ; then
+	rsync_cmd="$base_rsync_cmd -av --delete-after -m $d $code_backup_dir"
+	echo "${code_dir}: running $rsync_cmd"
+	$rsync_cmd 2>&1 >> $log_file
+    else
+	echo "${code_dir}: not found, skipped"
+    fi
+done
+#
+# Report the sizes of SQL, files and code backups
 du -sh $BACKUP_DIR
 du -sh $BACKUP_DIR/sql
 du -sh $BACKUP_DIR/files
+du -sh $BACKUP_DIR/code
 du -sh $BACKUP_DIR/logs
 echo "Done"
 exit
