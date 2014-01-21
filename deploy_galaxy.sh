@@ -10,11 +10,25 @@
 # Available options:
 # --port PORT: use PORT rather than default (8080)
 # --admin_users EMAIL[,EMAIL...]: set admin user email addresses
+# --release TAG: update to release TAG
 #
+# Usage
+function usage() {
+  echo "Usage: $0 [ OPTIONS ] DIR"
+  echo ""
+  echo "Create a new Galaxy instance under directory DIR"
+  echo ""
+  echo "Options:"
+  echo "  --port PORT: use PORT rather than 8080"
+  echo "  --admin_users EMAIL[,EMAIL...]: set admin user emails"
+  echo "  --release TAG: update to release TAG"
+}
 # Command line
+GALAXY_DIR=
 port=
 admin_users=
-while [ $# -gt 1 ] ; do
+release_tag=
+while [ $# -ge 1 ] ; do
     if [ "$1" == "--port" ] ; then
         # User specified port number
 	shift
@@ -26,29 +40,34 @@ while [ $# -gt 1 ] ; do
 	if [ ! -z "$1" ] ; then
 	    admin_users=$1
 	fi
+    elif [ "$1" == "--release" ] ; then
+	shift
+	if [ ! -z "$1" ] ; then
+	    release_tag=$1
+	fi
+    elif [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
+	usage
+	exit 0
+    else
+	if [ $# -eq 1 ] ; then
+	    GALAXY_DIR=$1
+	else
+	    echo "Unrecognised argument: $1"
+	fi
     fi
     # Next argument
     shift
 done
 # Get Galaxy directory
-if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
-  echo "Usage: $0 [ OPTIONS ] DIR"
-  echo ""
-  echo "Create a new Galaxy instance under directory DIR"
-  echo ""
-  echo "Options:"
-  echo "  --port PORT: use PORT rather than 8080"
-  echo "  --admin_users: EMAIL[,EMAIL...]: set admin user emails"
-  exit
-fi
-GALAXY_DIR=$1
-# Check that the target directory doesn't already exist
-if [ -e $GALAXY_DIR ] ; then
+if [ -z "$GALAXY_DIR" ] ; then
+  echo "No directory specified"
+  exit 1
+elif [ -e $GALAXY_DIR ] ; then
   echo "$GALAXY_DIR: already exists"
   exit 1
 fi
 # Start
-echo "Making subdirectory $GALAXY_DIR in $(pwd)"
+echo "Making subdirectory '$GALAXY_DIR' in $(pwd)"
 mkdir $GALAXY_DIR
 if [ ! -d "$GALAXY_DIR" ] ; then
     echo "Failed to make directory $GALAXY_DIR"
@@ -74,12 +93,23 @@ pip install numpy >> install.log
 echo "ok"
 echo -n "Downloading and installing patched RPy..."
 wget -O rpy-1.0.3-patched.tar.gz https://dl.dropbox.com/s/r0lknbav2j8tmkw/rpy-1.0.3-patched.tar.gz?dl=1 &>> install.log
-pip install -f file://${PWD}/rpy-1.0.3-patched.tar.gz rpy >> install.log
+pip install file://${PWD}/rpy-1.0.3-patched.tar.gz >> install.log
 echo "ok"
 # Install Galaxy
 echo -n "Cloning galaxy source code..."
 hg clone https://bitbucket.org/galaxy/galaxy-dist/ &>> install.log
 echo "ok"
+echo -n "Switching to stable branch..."
+cd galaxy-dist
+hg update stable &>> install.log
+echo "ok"
+if [ ! -z "$release_tag" ] ; then
+    echo -n "Switching to release tag $release_tag..."
+    hg pull &>> install.log
+    hg update $release_tag
+    echo "ok"
+fi
+cd ..
 # Create somewhere for local tools
 echo "Creating area for local tools"
 mkdir local_tools
@@ -104,19 +134,22 @@ sed 's/#tool_config_file = .*/tool_config_file = tool_conf.xml,shed_tool_conf.xm
 sed -i 's,#tool_dependency_dir = None,tool_dependency_dir = ../managed_packages,' galaxy-dist/universe_wsgi.ini
 # Set the brand
 brand=$(basename $GALAXY_DIR)
-echo "Setting brand to $brand"
+echo "Setting brand to $brand (brand)"
 sed -i 's,#brand = None,brand = '"$brand"',' galaxy-dist/universe_wsgi.ini
 # Set non-default port
 if [ ! -z "$port" ] ; then
-    echo "Setting port to $port"
+    echo "Setting port to $port (port)"
     sed -i 's,#port = 8080,port = '"$port"',' galaxy-dist/universe_wsgi.ini
 fi
 # Set admin users
 if [ ! -z "$admin_users" ] ; then
-    echo "Adding $admin_users to admin user emails"
+    echo "Adding $admin_users to admin user emails (admin_users)"
     echo "(You still need to create these accounts once Galaxy has started)"
     sed -i 's,#admin_users = None,admin_users = '"$admin_users"',' galaxy-dist/universe_wsgi.ini
 fi
+# Allow uploads from file system paths
+echo "Allow uploads from file system paths (allow_library_path_paste)"
+sed -i 's,#allow_library_path_paste = False,allow_library_path_paste = True,' galaxy-dist/universe_wsgi.ini
 # Create wrapper script to run galaxy
 echo "Making generic wrapper script 'start_galaxy.sh'"
 cat > start_galaxy.sh <<EOF
