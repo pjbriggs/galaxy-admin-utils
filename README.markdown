@@ -19,6 +19,7 @@ Quick deployment of local Galaxy instances
 
    --port PORT: use PORT rather than default (8080)
    --admin_users EMAIL[,EMAIL...]: set admin user email addresses
+   --release TAG: update to release TAG
 
  * _add_tool.sh_: automatically add tool files into local instance from `deploy_galaxy.sh`
 
