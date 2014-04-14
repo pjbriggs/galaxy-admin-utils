@@ -15,10 +15,14 @@
 # For set ups with multiple handlers and web servers this should mean that Galaxy
 # remains available to end users throughout the restart process.
 #
-#Change these values to match your installation
+# Thanks to Brad Langhorst https://github.com/bwlang for additional improvements/
+# generalisation.
+#
+# Change these values to match your installation
 GALAXY_PATH=.
 LOG_PATH=.
 PID_PATH=.
+# Collect list of servers
 servers=$(grep "^\[server:" $GALAXY_PATH/universe_wsgi.ini | sed 's/\[server:\(.*\)\]/\1/g')
 for s in $servers ; do
     # Restart each server in turn (except the manager)
