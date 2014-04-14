@@ -23,6 +23,25 @@ function usage() {
   echo "  --admin_users EMAIL[,EMAIL...]: set admin user emails"
   echo "  --release TAG: update to release TAG"
 }
+# Prerequisites
+echo -n Checking for mercurial...
+got_mercurial=`/usr/bin/which hg 2>&1 | grep -v "^/usr/bin/which: no hg in"`
+if [ -z "$got_mercurial" ] ; then
+    echo FAILED
+    echo "ERROR: mercurial 'hg' not found on your PATH" >&2
+    exit 1
+else
+    echo ok
+fi
+echo -n Checking for virtualenv...
+got_virtualenv=`/usr/bin/which virtualenv 2>&1 | grep -v "^/usr/bin/which: no virtualenv in"`
+if [ -z "$got_virtualenv" ] ; then
+    echo FAILED
+    echo "ERROR: Python 'virtualenv' not found on your PATH"
+    exit 1
+else
+    echo ok
+fi
 # Command line
 GALAXY_DIR=
 port=
@@ -76,11 +95,6 @@ fi
 cd $GALAXY_DIR
 GALAXY_DIR=$(pwd)
 # Make a Python virtualenv for this instance
-got_virtualenv=`/usr/bin/which virtualenv 2>&1 | grep -v "^/usr/bin/which: no virtualenv in"`
-if [ -z "$got_virtualenv" ] ; then
-    echo "ERROR: Python 'virtualenv' not found on your PATH"
-    exit 1
-fi
 echo -n "Making virtualenv..."
 virtualenv galaxy_venv >> install.log
 echo "ok"
@@ -90,7 +104,13 @@ echo "ok"
 # Install dependencies
 echo -n "Installing NumPy..."
 pip install numpy >> install.log
-echo "ok"
+if [ $? -ne 0 ] ; then
+    echo ERROR
+    echo Numpy install finished with non-zero exit status >&2
+    exit 1
+else
+    echo "ok"
+fi
 echo -n "Downloading and installing patched RPy..."
 wget -O rpy-1.0.3-patched.tar.gz https://dl.dropbox.com/s/r0lknbav2j8tmkw/rpy-1.0.3-patched.tar.gz?dl=1 &>> install.log
 pip install file://${PWD}/rpy-1.0.3-patched.tar.gz >> install.log
@@ -98,6 +118,11 @@ echo "ok"
 # Install Galaxy
 echo -n "Cloning galaxy source code..."
 hg clone https://bitbucket.org/galaxy/galaxy-dist/ &>> install.log
+if [ ! -d galaxy-dist ] ; then
+   echo FAILED
+   echo No cloned directory galaxy-dist >&2
+   exit 1
+fi
 echo "ok"
 echo -n "Switching to stable branch..."
 cd galaxy-dist
