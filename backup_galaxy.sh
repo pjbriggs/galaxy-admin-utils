@@ -173,7 +173,7 @@ echo "galaxy-dist: running $rsync_cmd"
 $rsync_cmd 2>&1 > $log_file
 #
 # Other directories
-code_dirs="local_tools shed_tools galaxy_env galaxy_venv cluster_environment_setup.sh"
+code_dirs="local_tools shed_tools tool_dependencies galaxy_env galaxy_venv cluster_environment_setup.sh"
 for code_dir in $code_dirs ; do
     d=${GALAXY_DIR}/../$code_dir
     if [ -e $d ] ; then
