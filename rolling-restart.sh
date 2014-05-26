@@ -22,23 +22,38 @@
 GALAXY_PATH=.
 LOG_PATH=.
 PID_PATH=.
+
+rolling_restart() {
 # Collect list of servers
 servers=$(grep "^\[server:" $GALAXY_PATH/universe_wsgi.ini | sed 's/\[server:\(.*\)\]/\1/g')
+
 for s in $servers ; do
     # Restart each server in turn (except the manager)
     if [ $s != "manager" ] ; then
-	echo Restarting $s
 	pid_file="$PID_PATH/$s.pid"
 	log_file="$LOG_PATH/$s.log"
 	cmd="$GALAXY_PATH/run.sh"
-	args="--server-name=$s --pid-file=$pid_file --log-file=$log_file"
-	sh $cmd $args --stop-daemon
+	args="--server-name=$s --pid-file=$pid_file --log-file=$log_file $@"
+
+	echo "  Stopping $s"
+	$cmd $args --stop-daemon 1>/dev/null 2>/dev/null
+
 	if [ -f "$pid_file" ] ; then
-	    echo STDERR "Permission error? PID file still exists even after running $cmd $args --stop-daemon "
-	    exit 1
+	    echo "PID file still exists even after running $cmd $args --stop-daemon "
+		ps -p $(cat "$pid_file") 1>/dev/null 2>/dev/null
+		if [ $? -eq 0 ]; then
+			echo "Galaxy process still running. PID " $(cat $pid_file)
+			exit 1
+		fi
 	fi
-	#echo "running $cmd $args --daemon"
-	sh $cmd $args --daemon
+
+	echo "  Starting $s"
+	sh $cmd $args --daemon 1>/dev/null 2>/dev/null
+	if [ $? != 0 ]; then
+		echo "Something went wrong while executing run.sh $args --daemon .  Exiting!"
+		exit 1
+	fi
+
 	# Wait until it's actively serving again
 	keep_checking=yes
 	echo -n "Waiting for $s "
@@ -64,5 +79,43 @@ for s in $servers ; do
 	echo "$s will not be restarted"
     fi
 done
+}
+
+validate_paths() {
+	if [ ! -f "$GALAXY_PATH/universe_wsgi.ini" ]; then
+		echo "Can't locate $GALAXY_PATH/universe_wsgi.ini. Exiting!"
+		exit 1
+	fi
+
+	if [ ! -d "$PID_PATH" ]; then
+		echo "Creating directory $PID_PATH"
+		mkdir -p "$PID_PATH"
+		[ $? -eq 0 ] || { echo "Unable to create directory $PID_PATH"; exit 1; }
+	fi
+
+	if [ ! -d "$LOG_PATH" ]; then
+		echo "Creating directory $LOG_PATH"
+		mkdir -p "$LOG_PATH"
+		[ $? -eq 0 ] || { echo "Unable to create directory $LOG_PATH"; exit 1; }
+	fi
+}
+
+main() {
+	validate_paths
+
+	local OLD_GALAXY_RUN_ALL=$GALAXY_RUN_ALL
+
+	GALAXY_RUN_ALL=0
+	export GALAXY_RUN_ALL
+
+	rolling_restart "$@"
+
+	GALAXY_RUN_ALL=$OLD_GALAXY_RUN_ALL
+
+	export GALAXY_RUN_ALL
+}
+
+main "$@"
+
 ##
 #
