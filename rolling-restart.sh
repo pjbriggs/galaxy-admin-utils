@@ -101,18 +101,15 @@ validate_paths() {
 }
 
 main() {
-	validate_paths
+        validate_paths
 
-	local OLD_GALAXY_RUN_ALL=$GALAXY_RUN_ALL
+        local OLD_GALAXY_RUN_ALL=$GALAXY_RUN_ALL
 
-	GALAXY_RUN_ALL=0
-	export GALAXY_RUN_ALL
+        unset GALAXY_RUN_ALL
 
-	rolling_restart "$@"
+        rolling_restart "$@"
 
-	GALAXY_RUN_ALL=$OLD_GALAXY_RUN_ALL
-
-	export GALAXY_RUN_ALL
+        export GALAXY_RUN_ALL=$OLD_GALAXY_RUN_ALL
 }
 
 main "$@"
