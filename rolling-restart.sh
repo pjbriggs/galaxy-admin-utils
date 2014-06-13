@@ -1,22 +1,28 @@
 #!/bin/sh
 #
 # rolling-restart.sh: restart multiple Galaxy processes in a "rolling" fashion
-# Peter Briggs, University of Manchester 2013
+# Peter Briggs, University of Manchester 2013-14
+# Additional contributions: Brad Langhorst, Iyad Kandalaft
 #
-# Usage: rolling-restart.sh
+# Usage: rolling-restart.sh [ OPTIONS ]
 #
 # Must be executed from the directory where the run.sh and universe_wsgi.ini files
 # are located, or specify the paths to your galaxy directory 
 #
-# Stops and starts each of the servers listed in universe_wsgi.ini in turn (except
-# for "manager", which must be restarted explicitly using e.g. run-server.sh),
+# Stops and starts each of the servers listed in universe_wsgi.ini in turn
 # waiting for each one to come back online before restarting the next.
+# 
+# If specified, OPTIONS can be one or more of the arguments recognised by run.sh/
 #
 # For set ups with multiple handlers and web servers this should mean that Galaxy
 # remains available to end users throughout the restart process.
 #
-# Thanks to Brad Langhorst https://github.com/bwlang for additional improvements/
-# generalisation.
+# For "legacy" Galaxy setups which specify a "manager" server process, this will
+# not be restarted via this script (use e.g. run-server.sh instead).
+#
+# Contributors Thanks to contributors for fixes and improvements:
+# - Brad Langhorst https://github.com/bwlang
+# - Iyad Kandalaft https://github.com/IyadKandalaft
 #
 # Change these values to match your installation
 GALAXY_PATH=.
@@ -24,61 +30,61 @@ LOG_PATH=.
 PID_PATH=.
 
 rolling_restart() {
-# Collect list of servers
-servers=$(grep "^\[server:" $GALAXY_PATH/universe_wsgi.ini | sed 's/\[server:\(.*\)\]/\1/g')
+    # Collect list of servers
+    servers=$(grep "^\[server:" $GALAXY_PATH/universe_wsgi.ini | sed 's/\[server:\(.*\)\]/\1/g')
 
-for s in $servers ; do
-    # Restart each server in turn (except the manager)
-    if [ $s != "manager" ] ; then
-	pid_file="$PID_PATH/$s.pid"
-	log_file="$LOG_PATH/$s.log"
-	cmd="$GALAXY_PATH/run.sh"
-	args="--server-name=$s --pid-file=$pid_file --log-file=$log_file $@"
+    for s in $servers ; do
+	# Restart each server in turn (except the manager)
+	if [ $s != "manager" ] ; then
+	    pid_file="$PID_PATH/$s.pid"
+	    log_file="$LOG_PATH/$s.log"
+	    cmd="$GALAXY_PATH/run.sh"
+	    args="--server-name=$s --pid-file=$pid_file --log-file=$log_file $@"
 
-	echo "  Stopping $s"
-	$cmd $args --stop-daemon 1>/dev/null 2>/dev/null
+	    echo "  Stopping $s"
+	    $cmd $args --stop-daemon 1>/dev/null 2>/dev/null
 
-	if [ -f "$pid_file" ] ; then
-	    echo "PID file still exists even after running $cmd $args --stop-daemon "
+	    if [ -f "$pid_file" ] ; then
+		echo "PID file still exists even after running $cmd $args --stop-daemon "
 		ps -p $(cat "$pid_file") 1>/dev/null 2>/dev/null
 		if [ $? -eq 0 ]; then
-			echo "Galaxy process still running. PID " $(cat $pid_file)
-			exit 1
+		    echo "Galaxy process still running. PID " $(cat $pid_file)
+		    exit 1
 		fi
-	fi
+	    fi
 
-	echo "  Starting $s"
-	sh $cmd $args --daemon 1>/dev/null 2>/dev/null
-	if [ $? != 0 ]; then
+	    echo "  Starting $s"
+	    sh $cmd $args --daemon 1>/dev/null 2>/dev/null
+	    if [ $? != 0 ]; then
 		echo "Something went wrong while executing run.sh $args --daemon .  Exiting!"
 		exit 1
-	fi
+	    fi
 
-	# Wait until it's actively serving again
-	keep_checking=yes
-	echo -n "Waiting for $s "
-	while [ ! -z "$keep_checking" ] ; do
-	    if [ -f "$pid_file" ] ; then
-		pid=`cat "$pid_file" 2>/dev/null`
-		#echo new pid: $pid
-		if [ ! -z "$pid" ] &&  [ -f "$log_file" ] ; then
-		    serving=`grep -A 1 "^Starting server in PID $pid" $log_file | grep "^serving on"`
-		    if [ ! -z "$serving" ] ; then
-			echo " back online"
-			keep_checking=
+	    # Wait until it's actively serving again
+	    keep_checking=yes
+	    echo -n "Waiting for $s "
+	    while [ ! -z "$keep_checking" ] ; do
+		if [ -f "$pid_file" ] ; then
+		    pid=`cat "$pid_file" 2>/dev/null`
+		    #echo new pid: $pid
+		    if [ ! -z "$pid" ] &&  [ -f "$log_file" ] ; then
+			serving=`grep -A 1 "^Starting server in PID $pid" $log_file | grep "^serving on"`
+			if [ ! -z "$serving" ] ; then
+			    echo " back online"
+			    keep_checking=
+			fi
 		    fi
 		fi
-	    fi
-	    if [ ! -z "$keep_checking" ] ; then
-		# Wait before checking again
-		echo -n .
-		sleep 5
-	    fi
-	done
-    else
-	echo "$s will not be restarted"
-    fi
-done
+		if [ ! -z "$keep_checking" ] ; then
+		    # Wait before checking again
+		    echo -n .
+		    sleep 5
+		fi
+	    done
+	else
+	    echo "$s will not be restarted"
+	fi
+    done
 }
 
 validate_paths() {

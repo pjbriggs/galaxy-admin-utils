@@ -89,14 +89,27 @@ Monitoring and controlling Galaxy processes in a multi-server set-up
 
 *  _rolling-restart.sh_: restart Galaxy processes in a "rolling" fashion
 
-   Usage: `rolling-restart.sh`
+   Usage: `rolling-restart.sh [OPTIONS]`
 
    Must be executed from the directory where the `run.sh` and `universe_wsgi.ini`
    files are located
 
-   Stops and starts each of the servers listed in universe_wsgi.ini in turn (except
-   for "manager", which must be restarted explicitly using e.g. run-server.sh),
+   Stops and starts each of the servers listed in universe_wsgi.ini in turn
    waiting for each one to come back online before restarting the next.
+
+   If specified, OPTIONS can be one or more of the arguments recognised by run.sh.
 
    For set ups with multiple handlers and web servers this should mean that Galaxy
    remains available to end users throughout the restart process.
+
+   For "legacy" Galaxy setups which specify a "manager" server process, this will
+   not be restarted via this script (use e.g. run-server.sh instead).
+
+
+Acknowledgements
+----------------
+
+Thanks to the following for their contributions and improvements:
+
+ * __Brad Langhorst__ <https://github.com/bwlang>
+ * __Iyad Kandalaft__ <https://github.com/IyadKandalaft>
