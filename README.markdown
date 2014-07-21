@@ -3,60 +3,6 @@ galaxy-admin-utils
 
 Utility scripts to help with managing local production instances of Galaxy.
 
-Quick deployment of local Galaxy instances
-------------------------------------------
-
- * _deploy_galaxy.sh_: automatically create a basic local instance of Galaxy
-
-   Usage: `deploy_galaxy.sh [ OPTIONS ] DIR`
-
-   Creates a new directory `DIR` and then sets up a Python virtualenv, clones
-   and configures a copy of `galaxy-dist`, sets up a subdirectory `local_tools`
-   pointed to by `local_tool_conf.xml`, and creates a `start_galaxy.sh` script
-   to launch the new local instance.
-
-   Options:
-
-   --port PORT: use PORT rather than default (8080)
-   --admin_users EMAIL[,EMAIL...]: set admin user email addresses
-   --release TAG: update to release TAG
-
- * _add_tool.sh_: automatically add tool files into local instance from `deploy_galaxy.sh`
-
-   Usage: `add_tool.sh DIR TOOL.xml [ TOOL_WRAPPER ]`
-
-   Simple script to add a Galaxy tool to a local instance previously created by
-   `deploy_galaxy.sh`. Copies TOOL.xml and optional TOOL_WRAPPER file to subdirectory
-   DIR/local_tools/TOOL/ and adds a reference in the `local_tools_conf.xml` file.
-   The tool should then be accessible on restarting the local instance.
-
-
-Backing up/copying Galaxy data and codebase
--------------------------------------------
-
- * _backup_galaxy.sh_: dump SQL database and rsync database files and
-   codebase for a local Galaxy instance
-
-   Usage: `backup_galaxy.sh [--dry-run] GALAXY_DIR [ BACKUP_DIR ]`
-
-   Reads information from universe_wsgi.ini file in GALAXY_DIR and
-   generates a dump of the SQL database, plus a "mirroring" rsync
-   of the database files directory and the Galaxy codebase.
-
-   Creates the following directory structure under BACKUP_DIR:
-
-    logs/    Logs from rsyncing the files
-    code/    Mirror of galaxy-dist, local_tools, shed_tools etc
-    files/   Mirror of Galaxy's database/files directory
-    sql/     Timestamped SQL dumps from Galaxy's database
-
-   If `BACKUP_DIR` is not specified then it defaults to the current
-   working directory.
-
-   If `--dry-run` is specified then the directory structure is
-   created and the SQL dump and rsync commands are constructed but
-   not executed.
-
 Monitoring and controlling Galaxy processes in a multi-server set-up
 --------------------------------------------------------------------
 
@@ -104,6 +50,38 @@ Monitoring and controlling Galaxy processes in a multi-server set-up
 
    For "legacy" Galaxy setups which specify a "manager" server process, this will
    not be restarted via this script (use e.g. run-server.sh instead).
+
+Backing up/copying Galaxy data and codebase
+-------------------------------------------
+
+ * _backup_galaxy.sh_: dump SQL database and rsync database files and
+   codebase for a local Galaxy instance
+
+   Usage: `backup_galaxy.sh [--dry-run] GALAXY_DIR [ BACKUP_DIR ]`
+
+   Reads information from universe_wsgi.ini file in GALAXY_DIR and
+   generates a dump of the SQL database, plus a "mirroring" rsync
+   of the database files directory and the Galaxy codebase.
+
+   Creates the following directory structure under BACKUP_DIR:
+
+    logs/    Logs from rsyncing the files
+    code/    Mirror of galaxy-dist, local_tools, shed_tools etc
+    files/   Mirror of Galaxy's database/files directory
+    sql/     Timestamped SQL dumps from Galaxy's database
+
+   If `BACKUP_DIR` is not specified then it defaults to the current
+   working directory.
+
+   If `--dry-run` is specified then the directory structure is
+   created and the SQL dump and rsync commands are constructed but
+   not executed.
+
+Quick deployment of local Galaxy instances
+------------------------------------------
+
+The old `deploy_galaxy.sh` script (which automatically created a basic local
+instance of Galaxy) has been removed - the `install_galaxy.sh` script <https://github.com/pjbriggs/bioinf-software-install/blob/master/install_galaxy.sh> has replaced it.
 
 
 Acknowledgements
