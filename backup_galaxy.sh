@@ -83,7 +83,7 @@ fi
 ##database_connection=" postgres://galaxy:secret@127.0.0.1:5432/galaxy_prod"
 ##database_connection=" sqlite:///./database/universe.sqlite?isolation_level=IMMEDIATE"
 db_type=`echo $database_connection | cut -d":" -f1`
-if [ "$db_type" == "postgres" ] ; then
+if [ "$db_type" == "postgres" ] || [ "$db_type" == "postgresql" ] ; then
     # Extract user, password and db name
     echo "Postgres database engine"
     psql_db=`echo $database_connection | cut -f4 -d"/"`
