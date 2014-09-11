@@ -125,7 +125,7 @@ fi
 #
 # Backup the SQL database
 timestamp=`date +%Y%m%d%H%M%S`
-if [ "$db_type" == "postgres" ] ; then
+if [ "$db_type" == "postgres" ] || [ "$db_type" == "postgresql" ] ; then
     # Set up destination for Postgres dump
     pg_dump_file=$sql_dir/galaxy_db.${timestamp}.pg_dump
     # Set up and run the command to dump the SQL
