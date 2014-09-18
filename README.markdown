@@ -77,6 +77,20 @@ Backing up/copying Galaxy data and codebase
    created and the SQL dump and rsync commands are constructed but
    not executed.
 
+ * _snapshot_galaxy.sh_: make a complete copy of a local Galaxy
+   install.
+
+   Usage: `snapshot_galaxy.sh GALAXY_DIR SNAPSHOT_DIR [ NAME ]`
+
+   Essentially does `cp -a` of the entire contents of a Galaxy install
+   directory to a timestamped subdirectory under `SNAPSHOT_DIR`.
+   Versions can be restored using `cp -a` from the snapshot directory.
+
+   This script is only suitable for small local installs which
+   use the SQLite database backend (i.e. those produced by the
+   `install_galaxy.sh` script); for production-type instances
+   use `backup_galaxy.sh`.
+
 Quick deployment of local Galaxy instances
 ------------------------------------------
 
