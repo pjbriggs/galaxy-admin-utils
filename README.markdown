@@ -97,6 +97,16 @@ Quick deployment of local Galaxy instances
 The old `deploy_galaxy.sh` script (which automatically created a basic local
 instance of Galaxy) has been removed - the `install_galaxy.sh` script <https://github.com/pjbriggs/bioinf-software-install/blob/master/install_galaxy.sh> has replaced it.
 
+Toolbox filters
+---------------
+
+Toolbox filter files are in the `toolbox_filters` subdirectory:
+
+ * _metagenomics.py_
+
+See <https://wiki.galaxyproject.org/UserDefinedToolboxFilters> for information
+on installing and using toolbox filters in Galaxy.
+
 
 Acknowledgements
 ----------------
