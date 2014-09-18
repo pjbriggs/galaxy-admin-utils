@@ -97,6 +97,18 @@ Quick deployment of local Galaxy instances
 The old `deploy_galaxy.sh` script (which automatically created a basic local
 instance of Galaxy) has been removed - the `install_galaxy.sh` script <https://github.com/pjbriggs/bioinf-software-install/blob/master/install_galaxy.sh> has replaced it.
 
+Bootstrapping utilities
+-----------------------
+
+Some simple bootstrapping utilties are in the `bootstrap` subdirectory. These
+use the `bioblend` package <http://bioblend.readthedocs.org/en/latest/index.html>
+to perform operations from the command line via the Galaxy API:
+
+ * _create_user.py_: create a new user account
+ * _install_tool.py_: install a tool from a toolshed
+
+This is work in progress.
+
 Toolbox filters
 ---------------
 
