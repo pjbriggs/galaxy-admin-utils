@@ -9,5 +9,5 @@ def only_metagenomics(context,section):
 
     """
     metagenomics_section_names = ['Metagenomic analyses',
-                                  'Metagenomics: Mothur',]
+                                  'Metagenomics Mothur',]
     return section.name in metagenomics_section_names
