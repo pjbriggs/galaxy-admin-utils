@@ -2,7 +2,7 @@
 #
 # Script to make a 'snapshot' of a Galaxy instance
 #
-# Usage: snapshot_galaxy.sh GALAXY_DIR SNAPSHOT_DIR [NAME]
+# Usage: snapshot_galaxy.sh [options] GALAXY_DIR SNAPSHOT_DIR [NAME]
 #
 # A snapshot is simply a complete copy of the contents of a Galaxy
 # installation directory, which is assumed to contain 'galaxy-dist' plus
@@ -19,20 +19,57 @@
 # 1. If the database is Postgresql then the SQL will be dumped to file,
 #    and will need to be reloaded in order to restore the database.
 # 2. If 'file_path' points to a directory outside the the Galaxy dir
-#    then the files database will not be copied.
+#    then the files database will not be copied unless the
+#    --include-external option is specified.
 #
+function usage() {
+    echo "Usage: $(basename $0) [options] GALAXY_DIR SNAPSHOT_DIR [NAME]"
+    echo 
+    echo "Creates a time-stamped 'snapshot' copy of GALAXY_DIR under"
+    echo "SNAPSHOT_DIR. Optional argument NAME is an arbitrary string"
+    echo "which is appended to the snapshot directory name as an aide-"
+    echo "memoire."
+    echo 
+    echo "Options:"
+    echo "  --include-external  Copy files component of database if"
+    echo "                      not under GALAXY_DIR"
+    echo 
+}
 function full_path() {
     local curr_dir=$(pwd)
     cd $1
     echo $(pwd)
     cd $curr_dir
 }
+function is_subdir() {
+    if [ -z "$(echo $1 | grep ^/)" ] || [ -z "$(echo $1 | grep -v $2)" ] ; then
+	echo yes
+    else
+	echo 
+    fi
+}
 #
 # Process command line
 if [ -z "$1" ] ; then
-    echo "Usage: $0 GALAXY_DIR SNAPSHOT_DIR [NAME]"
+    usage
     exit
 fi
+while [ ! -z "$(echo $1 | grep ^-)" ] ; do
+    case "$1" in
+	-h|--help)
+	    usage
+	    exit
+	    ;;
+	--include-external)
+	    include_external=yes
+	    ;;
+	*)
+	    echo ERROR: unrecognised option $1 >&2
+	    exit 1
+	    ;;
+    esac
+    shift
+done	    
 GALAXY_DIR=$(full_path $1)
 SNAPSHOT_DIR=$2
 SNAPSHOT_NAME=$3
@@ -89,18 +126,36 @@ file_path=$(grep "^#\?file_path" $config_file | tail -1 | cut -f2- -d"=")
 file_path=$(echo $file_path) # Trick to strip leading spaces
 if [ ! -z "$file_path" ] ; then
     echo $file_path
+    if [ ! -z "$(is_subdir $file_path $GALAXY_DIR)" ] ; then
+	local_files=yes
+    fi
 else
     echo not found
     echo ERROR could not extract 'file_path' >&2
     exit 1
 fi
-#
-# Check if files part of database is under Galaxy dist
-if [ ! -z "$(echo $file_path | grep ^/)" ] && \
-    [ ! -z "$(echo $file_path | grep -v $GALAXY_DIR)" ] ; then
-    echo WARNING 'files' part of database is not a subdir of $GALAXY_DIR >&2
+echo -n "Locating 'galaxy_data_manager_data_path'..."
+data_path=$(grep "^#\?galaxy_data_manager_data_path" $config_file | tail -1 | cut -f2- -d"=")
+data_path=$(echo $data_path) # Trick to strip leading spaces
+if [ ! -z "$data_path" ] ; then
+    echo $data_path
+    if [ ! -z "$(is_subdir $data_path $GALAXY_DIR)" ] ; then
+	local_data=yes
+    fi
+else
+    echo not found
+    echo WARNING could not extract 'galaxy_data_manager_data_path' >&2
 fi
 #
+# Report if some data are not under Galaxy dir
+if [ -z "$local_files" ] || [ -z "$local_data" ] ; then
+    if [ -z "$include_external" ] ; then
+	echo WARNING database 'files' and/or data manager data are not under $GALAXY_DIR >&2
+	echo Use --include-external option to also copy these files >&2
+    fi
+else
+    local_files=yes
+fi
 #
 # Sort out destination directory for snapshots
 if [ ! -e "$SNAPSHOT_DIR" ] ; then
@@ -153,6 +208,24 @@ if [ "$db_type" == "postgres" ] || [ "$db_type" == "postgresql" ] ; then
     $pg_dump_cmd > $pg_dump_file
     unset PGPASSWORD
     echo done
+fi
+#
+# Copy files part of database (if separate)
+if [ ! -z "$include_external" ] ; then
+    if [ -z "$local_files" ] ; then
+	files_snapshot_dir=$snapshot_dir/_files.${timestamp}
+	echo -n Copying database files to $(basename $files_snapshot_dir)...
+	mkdir -p $files_snapshot_dir
+	cp -a $file_path/* $files_snapshot_dir
+	echo done
+    fi
+    if [ -z "$local_data" ] ; then
+	data_snapshot_dir=$snapshot_dir/_managed_data.${timestamp}
+	echo -n Copying managed data files to $(basename $data_snapshot_dir)...
+	mkdir -p $data_snapshot_dir
+	cp -a $data_path/* $data_snapshot_dir
+	echo done
+    fi
 fi
 #
 # Remove .pid files for servers
