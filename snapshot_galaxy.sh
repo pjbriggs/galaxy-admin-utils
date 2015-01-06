@@ -216,15 +216,23 @@ if [ ! -z "$include_external" ] ; then
 	files_snapshot_dir=$snapshot_dir/_files.${timestamp}
 	echo -n Copying database files to $(basename $files_snapshot_dir)...
 	mkdir -p $files_snapshot_dir
-	cp -a $file_path/* $files_snapshot_dir
-	echo done
+	if [ ! -z "$(ls $file_path/*)" ] ; then
+	    cp -a $file_path/* $files_snapshot_dir
+	    echo done
+	else
+	    echo done \(no files to copy\)
+	fi
     fi
     if [ -z "$local_data" ] ; then
 	data_snapshot_dir=$snapshot_dir/_managed_data.${timestamp}
 	echo -n Copying managed data files to $(basename $data_snapshot_dir)...
 	mkdir -p $data_snapshot_dir
-	cp -a $data_path/* $data_snapshot_dir
-	echo done
+	if [ ! -z "$(ls $data_path/*)" ] ; then
+	    cp -a $data_path/* $data_snapshot_dir
+	    echo done
+	else
+	    echo done \(no files to copy\)
+	fi
     fi
 fi
 #
