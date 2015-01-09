@@ -194,7 +194,6 @@ if [ $? -ne 0 ] ; then
     exit 1
 else
     echo done
-    du -sh $snapshot_dir
 fi
 #
 # Dump the SQL database (if not sqlite)
@@ -251,6 +250,8 @@ for server in $(grep "^\[server:" $config_file | cut -d: -f2- | cut -d"]" -f1) ;
 	echo "* $server: no pid file"
     fi
 done
+# Report the size of the snapshot
+du -sh $snapshot_dir
 exit 0
 ##
 #
