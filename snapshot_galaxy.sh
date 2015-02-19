@@ -89,9 +89,19 @@ if [ ! -d $GALAXY_DIR/galaxy-dist ] ; then
 fi
 #
 # Locate configuration file
-config_file=$GALAXY_DIR/galaxy-dist/universe_wsgi.ini
-if [ ! -f $config_file ] ; then
-    echo ERROR no config file '$config_file' found >&2
+for conf in universe_wsgi.ini config/galaxy.ini ; do
+    echo -n Looking for $conf...
+    config_file=$GALAXY_DIR/galaxy-dist/$conf
+    if [ -f $config_file ] ; then
+	echo yes
+	break
+    else
+	echo no
+	config_file=
+    fi
+done
+if [ -z "$config_file" ] ; then
+    echo ERROR no config file found >&2
     exit 1
 fi
 #
