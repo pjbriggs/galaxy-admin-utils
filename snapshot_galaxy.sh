@@ -25,10 +25,12 @@
 function usage() {
     echo "Usage: $(basename $0) [options] GALAXY_DIR SNAPSHOT_DIR [NAME]"
     echo 
-    echo "Creates a time-stamped 'snapshot' copy of GALAXY_DIR under"
-    echo "SNAPSHOT_DIR. Optional argument NAME is an arbitrary string"
-    echo "which is appended to the snapshot directory name as an aide-"
-    echo "memoire."
+    echo "Creates a time-stamped 'snapshot' copy of GALAXY_DIR (which"
+    echo "should contain a 'galaxy-dist' subdirectory with the Galaxy"
+    echo "installation) under SNAPSHOT_DIR."
+    echo 
+    echo "Optional argument NAME is an arbitrary string which is appended "
+    echo "to the snapshot directory name as an aide-memoire."
     echo 
     echo "Options:"
     echo "  --include-external  Copy files component of database if"
