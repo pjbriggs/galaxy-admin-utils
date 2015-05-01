@@ -50,6 +50,54 @@ function is_subdir() {
 	echo 
     fi
 }
+function get_previous_snapshot() {
+    # Locate the most recent snapshot directory
+    local snapshots_dir=$(dirname $1)
+    local previous_snapshot=$(ls -tr -c1 $snapshots_dir | tail -2 | head -1)
+    if [ "$previous_snapshot" == "$(basename $1)" ] ; then
+	# Only the current snapshot dir located
+	echo 
+    else
+	echo $snapshots_dir/$previous_snapshot
+    fi
+}
+function copy_database_files() {
+    # Tries to perform an efficient copy of the 'files'
+    # from the Galaxy database
+    local files_path=$1
+    local files_snapshot_dir=$2
+    local last_snapshot_dir=
+    # Find the files dir in previous snapshot
+    if [ ! -z "$3" ] ; then
+	last_snapshot_dir=$(ls -d $3/_files.* 2>/dev/null)
+    fi
+    # Create the directory structure
+    echo -n Creating subdirs in $files_snapshot_dir...
+    for d in $(find $files_path -type d -printf "%P\n") ; do
+	##echo Making dir: $d
+	mkdir -p $files_snapshot_dir/$d
+    done
+    echo done
+    # Copy the files into this structure
+    echo -n Copying files...
+    for f in $(find $files_path -type f -printf "%P\n") ; do
+	if [ ! -z "$last_snapshot_dir" ] ; then
+	    # Check for existing copy
+	    if [ -f "$last_snapshot_dir/$f" ] ; then
+		#echo Linking to file: $last_snapshot_dir/$f
+		ln $last_snapshot_dir/$f $files_snapshot_dir/$f
+	    else
+		echo Copying file: $f
+		cp -a $files_path/$f $files_snapshot_dir/$f
+	    fi
+	else
+	    # Copy from source
+	    echo Copying file: $f
+	    cp -a $files_path/$f $files_snapshot_dir/$f
+	fi
+    done
+    echo done
+}
 #
 # Process command line
 if [ -z "$1" ] ; then
@@ -197,6 +245,10 @@ echo -n Making $snapshot_dir...
 mkdir -p $snapshot_dir
 echo done
 #
+# Find most recent previous snapshot
+last_snapshot=$(get_previous_snapshot $snapshot_dir)
+echo "Previous: $last_snapshot"
+#
 # Copy everything
 echo -n Copying...
 cp -a $GALAXY_DIR/* $snapshot_dir
@@ -225,13 +277,12 @@ fi
 if [ ! -z "$include_external" ] ; then
     if [ -z "$local_files" ] ; then
 	files_snapshot_dir=$snapshot_dir/_files.${timestamp}
-	echo -n Copying database files to $(basename $files_snapshot_dir)...
+	echo Copying external database files to $(basename $files_snapshot_dir)
 	mkdir -p $files_snapshot_dir
 	if [ ! -z "$(ls $file_path)" ] ; then
-	    cp -a $file_path/* $files_snapshot_dir
-	    echo done
+	    copy_database_files $file_path $files_snapshot_dir $last_snapshot
 	else
-	    echo done \(no files to copy\)
+	    echo No files to copy
 	fi
     fi
     if [ -z "$local_data" ] ; then
