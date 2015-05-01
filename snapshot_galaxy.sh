@@ -184,7 +184,7 @@ if [ -z "$(echo $SNAPSHOT_DIR | grep -v $GALAXY_DIR)" ] ; then
 fi
 #
 # Make timestamped snapshot subdir
-timestamp=$(date +%s-%Y_%m_%d)
+timestamp=$(date +%Y_%m_%d-%s)
 snapshot_dir=$SNAPSHOT_DIR/$(basename $GALAXY_DIR)/snapshot-$timestamp
 if [ ! -z "$SNAPSHOT_NAME" ] ; then
     snapshot_dir=${snapshot_dir}.${SNAPSHOT_NAME}
