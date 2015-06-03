@@ -51,6 +51,27 @@ Monitoring and controlling Galaxy processes in a multi-server set-up
    For "legacy" Galaxy setups which specify a "manager" server process, this will
    not be restarted via this script (use e.g. run-server.sh instead).
 
+Getting information about a tool on the toolshed
+------------------------------------------------
+
+ * _get_galaxy_slots.sh_: extract references to `GALAXY_SLOTS` from the XML
+   files in a toolshed repo, to get an indication of whether a tool is
+   multicore (and an idea of the optimal number of cores to use).
+
+   Usage: `get_galaxy_slots.sh TOOL_REPO`
+
+   `TOOL_REPO` should be a URL from the tool's page on the toolshed, which
+   can be `hg clone`d.
+
+   Reports each XML file with a reference to `GALAXY_SLOTS` along with the
+   tool id and the line that contains the reference, e.g.
+
+       $ get_galaxy_slots.sh https://pjbriggs@toolshed.g2.bx.psu.edu/repos/devteam/tophat
+       ...
+       tophat/tophat_wrapper.xml:
+       * id="tophat"
+       * --num-threads="\${GALAXY_SLOTS:-4}"
+
 Backing up/copying Galaxy data and codebase
 -------------------------------------------
 
