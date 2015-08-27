@@ -52,9 +52,9 @@ for conf in universe_wsgi.ini config/galaxy.ini ; do
     else
 	config_file=
     fi
-    echo not found
 done
 if [ -z "$config_file" ] ; then
+    echo not found
     echo ERROR no config file found >&2
     exit 1
 fi
