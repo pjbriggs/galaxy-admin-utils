@@ -66,17 +66,17 @@ fi
 #
 # Locate configuration file
 for conf in universe_wsgi.ini config/galaxy.ini ; do
-    echo -n Looking for $conf...
+    echo -n Looking for configuration file...
     config_file=$GALAXY_DIR/$conf
     if [ -f $config_file ] ; then
 	echo $config_file
 	break
     else
-	echo not found
 	config_file=
     fi
 done
 if [ -z "$config_file" ] ; then
+    echo not found
     echo ERROR no config file found >&2
     exit 1
 fi
@@ -127,7 +127,11 @@ if [ -z "$file_path" ] ; then
     echo "Stopping"
     exit 1
 fi
-DB_DIR=$GALAXY_DIR/$file_path
+if [ -z "$(echo $file_path | grep ^/)" ] ; then
+    DB_DIR=$GALAXY_DIR/$file_path
+else
+    DB_DIR=$file_path
+fi
 echo "Database files: $DB_DIR"
 if [ ! -d $DB_DIR ] ; then
     echo "ERROR not a directory"
