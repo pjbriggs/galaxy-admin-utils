@@ -35,7 +35,8 @@ get_conf_file() {
     if [ ! -z "$GALAXY_CONF_FILE" ] ; then
 	if [ ! -f $GALAXY_CONF_FILE ] ; then
 	    echo ERROR config file $GALAXY_CONF_FILE not found >&2
-	return
+	    exit 1
+	fi
     fi
     for conf in universe_wsgi.ini config/galaxy.ini ; do
 	config_file=$GALAXY_PATH/$conf
