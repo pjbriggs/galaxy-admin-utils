@@ -43,8 +43,8 @@ if [ "$1" == "--restart-daemon" ] ; then
 fi
 #
 # Locate configuration file
+echo -n Looking for configuration file...
 for conf in universe_wsgi.ini config/galaxy.ini ; do
-    echo -n Looking for $conf...
     config_file=$conf
     if [ -f $config_file ] ; then
 	echo $config_file
