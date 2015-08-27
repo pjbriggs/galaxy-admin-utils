@@ -64,20 +64,32 @@ if [ ! -d $BACKUP_DIR/code ] ; then
     mkdir -p $BACKUP_DIR/code
 fi
 #
-# Look for universe_wsgi.ini and extract SQL database details
+# Locate configuration file
+for conf in universe_wsgi.ini config/galaxy.ini ; do
+    echo -n Looking for $conf...
+    config_file=$GALAXY_DIR/$conf
+    if [ -f $config_file ] ; then
+	echo $config_file
+	break
+    else
+	echo not found
+	config_file=
+    fi
+done
+if [ -z "$config_file" ] ; then
+    echo ERROR no config file found >&2
+    exit 1
+fi
+#
+# Extract SQL database details
 #
 # Formats are:
 # sqlite:///./database/universe.sqlite?isolation_level=IMMEDIATE
 # postgres://user:password@localhost:5432/database
-universe_wsgi=$GALAXY_DIR/universe_wsgi.ini
-if [ ! -f $universe_wsgi ] ; then
-    echo "Can't find $universe_wsgi.ini" >&2
-    exit 1
-fi
-database_connection=`grep "^database_connection" $universe_wsgi | tail -1 | cut -f2- -d"="`
+database_connection=$(grep "^database_connection" $config_file | tail -1 | cut -f2- -d"=")
 if [ -z "$database_connection" ] ; then
     # Capture the default which is commented out
-    database_connection=`grep "^#database_connection" $universe_wsgi | tail -1 | cut -f2- -d"="`
+    database_connection=$(grep "^#database_connection" $config_file | tail -1 | cut -f2- -d"=")
 fi
 # Uncomment for testing
 ##database_connection=" postgres://galaxy:secret@127.0.0.1:5432/galaxy_prod"
@@ -108,7 +120,7 @@ else
 fi
 #
 # Locate the files part of the database
-file_path=`grep "^#\?file_path" $universe_wsgi | tail -1 | cut -f2- -d"="`
+file_path=$(grep "^#\?file_path" $config_file | tail -1 | cut -f2- -d"=")
 file_path=$(echo $file_path) # Trick to strip leading spaces
 if [ -z "$file_path" ] ; then
     echo "ERROR could not extract file_path"
