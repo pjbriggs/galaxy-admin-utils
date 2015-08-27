@@ -124,9 +124,9 @@ validate_paths() {
 }
 
 main() {
-        validate_paths
+        get_conf_file
 
-	get_conf_file
+        validate_paths
 
         local OLD_GALAXY_RUN_ALL=$GALAXY_RUN_ALL
 
