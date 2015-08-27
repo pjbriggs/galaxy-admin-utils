@@ -28,6 +28,25 @@
 GALAXY_PATH=.
 LOG_PATH=.
 PID_PATH=.
+GALAXY_CONF_FILE=
+
+get_conf_file() {
+    # Locate configuration file
+    if [ ! -z "$GALAXY_CONF_FILE" ] ; then
+	if [ ! -f $GALAXY_CONF_FILE ] ; then
+	    echo ERROR config file $GALAXY_CONF_FILE not found >&2
+	return
+    fi
+    for conf in universe_wsgi.ini config/galaxy.ini ; do
+	config_file=$GALAXY_PATH/$conf
+	if [ -f $config_file ] ; then
+	    GALAXY_CONF_FILE=$config_file
+	    return
+	fi
+    done
+    echo ERROR no config file found >&2
+    exit 1
+}
 
 rolling_restart() {
     # Collect list of servers
@@ -108,6 +127,8 @@ validate_paths() {
 
 main() {
         validate_paths
+
+	get_conf_file
 
         local OLD_GALAXY_RUN_ALL=$GALAXY_RUN_ALL
 
