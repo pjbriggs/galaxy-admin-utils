@@ -33,10 +33,7 @@ GALAXY_CONF_FILE=
 get_conf_file() {
     # Locate configuration file
     if [ ! -z "$GALAXY_CONF_FILE" ] ; then
-	if [ ! -f $GALAXY_CONF_FILE ] ; then
-	    echo ERROR config file $GALAXY_CONF_FILE not found >&2
-	    exit 1
-	fi
+	return
     fi
     for conf in universe_wsgi.ini config/galaxy.ini ; do
 	config_file=$GALAXY_PATH/$conf
@@ -51,7 +48,7 @@ get_conf_file() {
 
 rolling_restart() {
     # Collect list of servers
-    servers=$(grep "^\[server:" $GALAXY_PATH/universe_wsgi.ini | sed 's/\[server:\(.*\)\]/\1/g')
+    servers=$(grep "^\[server:" $GALAXY_CONF_FILE | sed 's/\[server:\(.*\)\]/\1/g')
 
     for s in $servers ; do
 	# Restart each server in turn (except the manager)
@@ -108,8 +105,8 @@ rolling_restart() {
 }
 
 validate_paths() {
-	if [ ! -f "$GALAXY_PATH/universe_wsgi.ini" ]; then
-		echo "Can't locate $GALAXY_PATH/universe_wsgi.ini. Exiting!"
+	if [ ! -f "$GALAXY_CONF_FILE" ]; then
+		echo "Can't locate $GALAXY_CONF_FILE. Exiting!"
 		exit 1
 	fi
 
