@@ -42,18 +42,31 @@ if [ "$1" == "--restart-daemon" ] ; then
     restart_daemon=yes
 fi
 #
+# Locate configuration file
+for conf in universe_wsgi.ini config/galaxy.ini ; do
+    echo -n Looking for $conf...
+    config_file=$conf
+    if [ -f $config_file ] ; then
+	echo $config_file
+	break
+    else
+	echo not found
+	config_file=
+    fi
+done
+if [ -z "$config_file" ] ; then
+    echo ERROR no config file found >&2
+    exit 1
+fi
+#
 # Check there's a run.sh file here
 if [ ! -f run.sh ] ; then
     echo No run.sh file here
     exit 1
 fi
 #
-# Check that the server exists in universe_wsgi.ini
-if [ ! -f universe_wsgi.ini ] ; then
-    echo No universe_wsgi.ini here
-    exit 1
-fi
-server_exists=`grep "^\[server:$server\]" universe_wsgi.ini 2>/dev/null`
+# Check that the server exists in config file
+server_exists=$(grep "^\[server:$server\]" $config_file 2>/dev/null)
 if [ -z "$server_exists" ] ; then
     echo No server called $server found in universe_wsgi.ini
     exit 1
