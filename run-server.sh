@@ -50,9 +50,9 @@ for conf in universe_wsgi.ini config/galaxy.ini ; do
 	echo $config_file
 	break
     else
-	echo not found
 	config_file=
     fi
+    echo not found
 done
 if [ -z "$config_file" ] ; then
     echo ERROR no config file found >&2
@@ -68,7 +68,7 @@ fi
 # Check that the server exists in config file
 server_exists=$(grep "^\[server:$server\]" $config_file 2>/dev/null)
 if [ -z "$server_exists" ] ; then
-    echo No server called $server found in universe_wsgi.ini
+    echo No server called $server found in $config_file
     exit 1
 fi
 #
