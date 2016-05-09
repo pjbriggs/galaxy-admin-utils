@@ -51,6 +51,23 @@ Monitoring and controlling Galaxy processes in a multi-server set-up
    For "legacy" Galaxy setups which specify a "manager" server process, this will
    not be restarted via this script (use e.g. run-server.sh instead).
 
+* _auto-restart.sh_: monitor Galaxy files and do rolling restart on update
+
+  Usage: `auto-restart.sh GALAXY_DIR WATCH_DIR`
+
+  The first time this script is run it will create an empty `.watch` file in
+  `WATCH_DIR`; each time it is run subsequently it will check to see if there
+  any files under `WATCH_DIR` which are newer than the `.watch` file. If any
+  newer files are found then it will do a rolling restart from `GALAXY_DIR`.
+
+  This script is intended to run as a cron job, to do automatic restarts when
+  tools are installed or updated, for example:
+
+  `*/5 * * * * /PATH/TO/galaxy-admin-utils/auto-restart.sh /PATH/TO/galaxy /PATH/TO/GALAXY/shed_tools`
+
+  will check for updates to the shed tools every 5 minutes, and restart Galaxy
+  if any are found.
+
 Getting information about a tool on the toolshed
 ------------------------------------------------
 
